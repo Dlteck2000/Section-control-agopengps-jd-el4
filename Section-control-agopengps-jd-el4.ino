@@ -4,7 +4,7 @@
 #include <IPAddress.h>
     
 // ========== PARAMETRES UTILSATEUR - USER SETTINGS ==========
-#define VERSION 1.00 //Version de l'ino
+#define VERSION 1.1 //Version de l'ino
 #define Main_Switch A0 // Broche entrés vanne générale
 #define Auto_Switch A1 // Broche entrés switch Auto/Manu
 #define nb_Sec 6 // Nombre de sections
@@ -105,7 +105,6 @@ int8_t PGN_234_Size = sizeof(PGN_234) - 1;
 //The variables used for storage
 uint8_t relayHi = 0, relayLo = 0, tramline = 0, uTurn = 0, hydLift = 0, geoStop = 0;
 float gpsSpeed;
-//uint8_t raiseTimer = 0, lowerTimer = 0, lastTrigger = 0;
 uint8_t onLo = 0, offLo = 0, onHi = 0, offHi = 0, mainByte = 0;
 uint8_t count = 0;
 bool isRaise = false, isLower = false;
@@ -203,9 +202,12 @@ void loop() {
 
     if (watchdogTimer > 20)
     {
+      //Serial.println("Perte de communication avec AgOpenGPS ! Désactivation de sécurité.");
       mainByte = 2;
       RelaysOff();
     }
+    Serial.print("Watch : ");
+    Serial.println(watchdogTimer);
 
     //Si changement d'état du switch Main_Switch en A0, acctualistation de la varaible Main_Section (0 ou 1)
     if (Main_Section != digitalRead(Main_Switch)){ Main_Section = digitalRead(Main_Switch);}
@@ -250,33 +252,21 @@ void loop() {
         else
         {
           //Serial.println("Manuel - vanne générale ouverte -> 12V");
-          //RelaysOff();
-          //onLo = 0, offLo = 0, onHi = 0, offHi = 0;
           for (count = 0; count < nb_Sec; count++)
           {
             if (digitalRead(Opto_PinArray[count]))
             {
-              /*Serial.print("Opto ");
-              Serial.print(count);
-              Serial.println(" désactivé");*/
-              //Serial.print(Opto_PinArray[count]);
-
-
                 bitSet(offLo, count);
                 bitClear(onLo, count);
-
             }
             else 
-            { 
+            {
                 bitClear(offLo, count);
                 bitSet(onLo, count);
             }
           }
         }
       }
-
-    //section relays
-    //SetRelays();
             
     //Send to AOG
     PGN_234[5] = (uint8_t)mainByte;
@@ -300,7 +290,6 @@ void loop() {
 
   delay (1);
 
-  //Appelle udpSteerRecv() défini ci-dessous.
   ether.packetLoop(ether.packetReceive());
 }
 
@@ -320,7 +309,7 @@ void udpSteerRecv(uint16_t dest_port, uint8_t src_ip[IP_LEN], uint16_t src_port,
   {
     if (udpData[3] == 239)  //Machine data
     {
-      Serial.println(" ----- PGN 239 -----");
+      //Serial.println(" ----- PGN 239 -----");
       uTurn = udpData[5];
       gpsSpeed = (float)udpData[6];//actual speed times 4, single uint8_t
 
@@ -346,11 +335,11 @@ void udpSteerRecv(uint16_t dest_port, uint8_t src_ip[IP_LEN], uint16_t src_port,
     //Hello de AOG vers la carte Machine
     else if (udpData[3] == 200) // Hello from AgIO
     {
-      Serial.println(" ----- PGN 200 Hello de AOG vers la carte Machine -----");
+      //Serial.println(" ----- PGN 200 Hello de AOG vers la carte Machine -----");
       if (udpData[7] == 1)
       {
         relayLo -= 255;
-                    relayHi -= 255;
+        relayHi -= 255;
         watchdogTimer = 0;
       }
 
@@ -364,7 +353,7 @@ void udpSteerRecv(uint16_t dest_port, uint8_t src_ip[IP_LEN], uint16_t src_port,
     //Configuration carte Machine
     else if (udpData[3] == 238) 
     {
-      Serial.println(" ----- PGN 238 Configuration carte Machine -----");
+      //Serial.println(" ----- PGN 238 Configuration carte Machine -----");
       aogConfig.raiseTime = udpData[5];
       aogConfig.lowerTime = udpData[6];
       aogConfig.enableToolLift = udpData[7];
@@ -397,7 +386,7 @@ void udpSteerRecv(uint16_t dest_port, uint8_t src_ip[IP_LEN], uint16_t src_port,
     //PGN 201 Reception configuration adresse IP
     else if (udpData[3] == 201)
     {
-      Serial.println(" ----- PGN 201 Reception configuration adresse IP -----");
+      //Serial.println(" ----- PGN 201 Reception configuration adresse IP -----");
       //make really sure this is the subnet pgn
       if (udpData[4] == 5 && udpData[5] == 201 && udpData[6] == 201)
       {
@@ -440,7 +429,7 @@ void udpSteerRecv(uint16_t dest_port, uint8_t src_ip[IP_LEN], uint16_t src_port,
 
     else if (udpData[3] == 236) //Configuration carte Machine Pin / Relays
     {
-      Serial.println(" ----- PGN 236 Configuration carte Machine Pin / Relays -----");
+      //Serial.println(" ----- PGN 236 Configuration carte Machine Pin / Relays -----");
       for (uint8_t i = 0; i < 24; i++)
       {
         pin[i] = udpData[i + 5];
