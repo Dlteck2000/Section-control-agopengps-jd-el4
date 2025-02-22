@@ -124,10 +124,6 @@ void setup() {
   while (!Serial) {}// wait for serial port to connect. Needed for native USB
 
   EEPROM.get(0, EEread);// read identifier
-  Serial.print ("EEPROM idt nano : ");
-  Serial.println (EEread) ;
-  Serial.print ("EEPROM idt : ");
-  Serial.println (EEP_Ident) ; 
 
   delay(100);
 
@@ -207,20 +203,15 @@ void loop() {
 
     if (watchdogTimer > 20)
     {
-      //Serial.println("Perte de communication avec AgOpenGPS ! Désactivation de sécurité.");
       mainByte = 2;
       RelaysOff();
     }
-    Serial.print("Watch : ");
-    Serial.println(watchdogTimer);
 
     //Si changement d'état du switch Main_Switch en A0, acctualistation de la varaible Main_Section (0 ou 1)
     if (Main_Section != digitalRead(Main_Switch)){ Main_Section = digitalRead(Main_Switch);}
 
     //Si changement d'état du switch Auto_Switch en A1, acctualistation de la varaible Auto_Section (0 ou 1)
     if (Auto_Section != digitalRead(Auto_Switch)){ Auto_Section = digitalRead(Auto_Switch);}
-    //Serial.println(digitalRead(Main_Switch));
-    //Serial.println(digitalRead(Auto_Switch));
 
     //Si le switch Auto est actionné
     if (Auto_Section == 1)
@@ -276,21 +267,12 @@ void loop() {
 
             }
             else 
-            { //Signal LOW ==> switch is closed
-              /*Serial.print("Opto ");
-              Serial.print(count);
-              Serial.println(" activé");*/
-              //onLo = 0, offLo = 0, onHi = 0, offHi = 0;
-              //Serial.print(Opto_PinArray[count]);
-
+            { 
                 bitClear(offLo, count);
                 bitSet(onLo, count);
-
             }
           }
         }
-        //Serial.println();
-        //RelaysOff();
       }
 
     //section relays
@@ -300,8 +282,6 @@ void loop() {
     PGN_234[5] = (uint8_t)mainByte;
     PGN_234[9] = (uint8_t)onLo;
     PGN_234[10] = (uint8_t)offLo;
-    //PGN_234[11] = (uint8_t)onHi;
-    //PGN_234[12] = (uint8_t)offHi;
       
     //add the checksum
     int16_t CK_A = 0;
